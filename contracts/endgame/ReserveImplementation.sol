@@ -165,7 +165,7 @@ contract ReserveImplementation is
         LibEndGame.ShipData storage data = shipData[shipId];
         data.owner = _DeleguateMsgSender();
         data.shipId = shipId;
-        data.timestampClaim = block.timestamp + 10 minutes;
+        data.timestampClaim = block.timestamp + 30 days;
         (uint256 boarding, uint256 sailing, uint256 charisma) = shipStorage
             .getShipTotalStats(shipId);
         data.totalStats = boarding + sailing + charisma;

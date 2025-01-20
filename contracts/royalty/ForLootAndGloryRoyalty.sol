@@ -701,4 +701,12 @@ contract ForLootAndGloryRoyalty is
     function showToggleEmission() external view returns (bool) {
         return toggleEmission;
     }
+
+    /**
+     * @dev Returns the end timer of the attribe spot for flag staker.
+     * @return A uint256 indicating when the attrib spot end.
+     */
+    function showTimeToClaimSpot() external view returns (uint256) {
+        return timeToClaimSpot;
+    }
 }

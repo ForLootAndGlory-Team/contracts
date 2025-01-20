@@ -119,7 +119,7 @@ contract BarrelsProduction is Ownable, ReentrancyGuard, ERC721Holder, Pausable {
     ) Ownable(msg.sender) {
         nftCollection = IERC721flagOZ(_nftCollection);
         rewardsToken = _rewardsToken;
-        rewardsPerDay = 1000 ether;
+        rewardsPerDay = 20 ether;
         royalty = _royalty;
         treasuryGuild = _treasuryGuild;
         feesToken = IERC20(_feesToken);

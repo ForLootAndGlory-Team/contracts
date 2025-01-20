@@ -34,7 +34,7 @@
 // Crafted with care by Drikkx , twitter: drikkxeth
 pragma solidity ^0.8.24;
 
-import {ERC721Upgradeable,IERC721} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import {ERC721Upgradeable, IERC721} from "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import {ERC721EnumerableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import {ERC721URIStorageUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import {ERC721BurnableUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
@@ -99,6 +99,15 @@ contract ERC721flagOZ is
         returns (string memory)
     {
         return super.tokenURI(tokenId);
+    }
+
+    /**
+     * @dev Base URI for computing {tokenURI}. If set, the resulting URI for each
+     * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
+     * by default, can be overridden in child contracts.
+     */
+    function _baseURI() internal view virtual override returns (string memory) {
+        return "";
     }
 
     function supportsInterface(

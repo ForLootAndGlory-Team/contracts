@@ -81,6 +81,8 @@ contract ForgeJobImplementation is
     event NewPremium(uint256 indexed id, uint256[] premium);
     event NewBaseFee(uint256 common, uint256 rare, uint256 leg);
     event NewLoad(uint256 indexed forgeId, uint256 amount);
+    event Stake(LibForge.ForgeInfos forge);
+    event Unstake(LibForge.ForgeInfos forge);
 
     function initialize(
         address _characters,
@@ -154,13 +156,13 @@ contract ForgeJobImplementation is
      * @dev Adds a character to a building in the forge.
      * @param characterId The ID of the character to be added.
      * @param buildingId The ID of the building in the forge.
-     * 
+     *
      * Requirements:
      * - The caller must be the owner of the character.
      * - If the building is not staked, the caller must be the owner of the forge.
      * - If the building is staked, the caller must be the owner of the staked building.
      * - The building must not already have a blacksmith.
-     * 
+     *
      * Effects:
      * - Transfers ownership of the character to the forge contract.
      * - Sets the building ID as the token ID of the forge.
@@ -197,17 +199,17 @@ contract ForgeJobImplementation is
      * @dev Removes the specified amount of job from a building's forge.
      * Only the role with the `CRAFTER_ROLE` can call this function.
      * This function is non-reentrant.
-     * 
+     *
      * @param buildingId The ID of the building.
      * @param rarity The rarity of the job.
      * @param numberOfmints The number of job mints to remove.
-     * 
+     *
      * Requirements:
      * - The blacksmith level must be sufficient for the specified rarity.
      * - The building must have enough rhum.
      * - If the blacksmith level is at the maximum level, the amount before burn must be sufficient.
      * - If the building is not active, it will be unstaked.
-     * 
+     *
      * Emits a `ForgeData` event with the updated forge information.
      */
     function removeJobAmount(
@@ -332,9 +334,14 @@ contract ForgeJobImplementation is
             if (forge.ownerOf(tokenIds[i]) != _DeleguateMsgSender())
                 revert LibErrors.YouAreNotOwnerOfForge();
             if (!isActive(tokenIds[i])) revert LibErrors.ForgeIsNotActive();
-            forge.safeTransferFrom(_DeleguateMsgSender(), address(this), tokenIds[i]);
+            forge.safeTransferFrom(
+                _DeleguateMsgSender(),
+                address(this),
+                tokenIds[i]
+            );
             _forge.isStaked = true;
             _forge.owner = _DeleguateMsgSender();
+            emit Stake(_forge);
         }
     }
 
@@ -348,6 +355,7 @@ contract ForgeJobImplementation is
             forge.safeTransferFrom(address(this), _forge.owner, tokenIds[i]);
             _forge.isStaked = false;
             _forge.owner = address(0);
+            emit Unstake(_forge);
         }
     }
 
@@ -360,6 +368,7 @@ contract ForgeJobImplementation is
         forge.safeTransferFrom(address(this), _forge.owner, tokenId);
         _forge.isStaked = false;
         _forge.owner = address(0);
+        emit Unstake(_forge);
     }
 
     /**
@@ -545,7 +554,9 @@ contract ForgeJobImplementation is
      * @param forgeId The ID of the forge.
      * @return forgeInfos_ The ForgeInfos struct containing the bonus job information.
      */
-    function _getForgeInfos(uint256 forgeId) internal view returns (LibForge.ForgeInfos memory forgeInfos_) {
+    function _getForgeInfos(
+        uint256 forgeId
+    ) internal view returns (LibForge.ForgeInfos memory forgeInfos_) {
         forgeInfos_ = forgeInfos[forgeId];
         (
             forgeInfos_.bonusJobCommon,

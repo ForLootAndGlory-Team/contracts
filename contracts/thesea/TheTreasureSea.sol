@@ -90,14 +90,18 @@ contract TheTreasureSea is
     }
 
     // The following functions are overrides required by Solidity.
-    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
-        internal
-        override(ERC1155Upgradeable, ERC1155SupplyUpgradeable)
-    {
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal override(ERC1155Upgradeable, ERC1155SupplyUpgradeable) {
         super._update(from, to, ids, values);
     }
 
-    function supportsInterface(bytes4 interfaceId)
+    function supportsInterface(
+        bytes4 interfaceId
+    )
         public
         view
         override(ERC1155Upgradeable, AccessControlUpgradeable)
@@ -119,6 +123,15 @@ contract TheTreasureSea is
             require(rhum.approve(address(this), _value), "Failed to approve");
             rhum.burnFrom(address(this), _value);
         }
+    }
+
+    function burnBottleOnly(address account, uint256 id, uint256 value) public {
+        require(
+            account == _msgSender() || isApprovedForAll(account, _msgSender()),
+            "ERC1155: caller is not token owner or approved"
+        );
+
+        _burn(account, id, value);
     }
 
     function isApprovedForAll(
@@ -167,6 +180,8 @@ contract TheTreasureSea is
             compassWhitelist[msg.sender],
             ""
         );
+
+        compassWhitelist[msg.sender] = 0;
     }
 
     /**
@@ -207,7 +222,7 @@ contract TheTreasureSea is
      * @notice The minted rhum bottles are represented by the `LibTheTreasureSea.TheTreasureSeaEnum.RHUM_BOTTLE` token ID.
      * @notice This function is non-reentrant.
      */
-    function mintRhumBottle(uint256 amount) external nonReentrant {
+    function convertToBottle(uint256 amount) external nonReentrant {
         uint256 amountBigUnit = amount * 10 ** 18;
         uint256 amountBottle = amount * BottlePerBarrel;
         require(
@@ -223,6 +238,23 @@ contract TheTreasureSea is
             uint256(LibTheTreasureSea.TheTreasureSeaEnum.RHUM_BOTTLE),
             amountBottle,
             ""
+        );
+    }
+
+    function convertToBarrel(uint256 amount) external nonReentrant {
+        uint256 amountBarrel = (amount * 1e18) / BottlePerBarrel;
+        require(
+            rhum.transferFrom(
+                address(this),
+                _DeleguateMsgSender(),
+                amountBarrel
+            ),
+            "Failed to transfer"
+        );
+        burnBottleOnly(
+            _DeleguateMsgSender(),
+            uint256(LibTheTreasureSea.TheTreasureSeaEnum.RHUM_BOTTLE),
+            amount
         );
     }
 

@@ -127,20 +127,20 @@ contract Barrels is ERC20, ERC20Burnable, AccessControl {
      * and the dividedBy value is divided by two.
      */
     function _updateHalving() internal {
-        // uint256 supply = totalSupply();
-        // if (supply > currentSupplyHalving) {
-        //     Halving += one;
-        //     uint256 newdivided = dividedBy * two;
-        //     dividedBy = newdivided;
-        //     currentSupplyHalving += supplyHalving;
-        //     emit NewHalving(block.timestamp, Halving, (currentSupplyHalving));
-        // } else if (supply < (currentSupplyHalving - (supplyHalving))) {
-        //     Halving -= one;
-        //     uint256 newdivided = dividedBy / two;
-        //     dividedBy = newdivided;
-        //     currentSupplyHalving -= supplyHalving;
-        //     emit NewHalving(block.timestamp, Halving, (currentSupplyHalving));
-        // }
+        uint256 supply = totalSupply();
+        if (supply > currentSupplyHalving) {
+            Halving += one;
+            uint256 newdivided = dividedBy * two;
+            dividedBy = newdivided;
+            currentSupplyHalving += supplyHalving;
+            emit NewHalving(block.timestamp, Halving, (currentSupplyHalving));
+        } else if (supply < (currentSupplyHalving - (supplyHalving))) {
+            Halving -= one;
+            uint256 newdivided = dividedBy / two;
+            dividedBy = newdivided;
+            currentSupplyHalving -= supplyHalving;
+            emit NewHalving(block.timestamp, Halving, (currentSupplyHalving));
+        }
     }
 
     /**

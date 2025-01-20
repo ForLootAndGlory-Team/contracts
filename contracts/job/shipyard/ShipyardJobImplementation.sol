@@ -80,6 +80,8 @@ contract ShipyardJobImplementation is
     event Private(uint256 indexed id);
     event Public(uint256 indexed id);
     event NewPremium(uint256 indexed id, uint256[] premium);
+    event Stake(LibShipyard.ShipyardInfos shipyard);
+    event Unstake(LibShipyard.ShipyardInfos shipyard);
 
     function initialize(
         address _characters,
@@ -137,7 +139,10 @@ contract ShipyardJobImplementation is
      * - The caller's staked balance must be greater than or equal to 1e18.
      * Emits a `NewLoad` event with the `shipyardId` and `amount`.
      */
-    function loadRhum(uint256 shipyardId, uint256 amount) external nonReentrant {
+    function loadRhum(
+        uint256 shipyardId,
+        uint256 amount
+    ) external nonReentrant {
         if (amount < 10) revert LibErrors.AmountTooLow();
         theSea.burn(
             _DeleguateMsgSender(),
@@ -192,11 +197,11 @@ contract ShipyardJobImplementation is
      * @dev Removes a specified amount of job from a shipyard.
      * Only the role with the `CRAFTER_ROLE` can call this function.
      * This function is non-reentrant.
-     * 
+     *
      * @param shipyardId The ID of the shipyard.
      * @param rarity The rarity of the job.
      * @param numberOfmints The number of job mints to remove.
-     * 
+     *
      * Requirements:
      * - The shipyard must have enough rhum for the specified rarity and number of mints.
      * - If the rarity is `RARE`, the shipyard's shipwright level must be at least 30.
@@ -204,7 +209,7 @@ contract ShipyardJobImplementation is
      * - If the shipwright level is at its maximum level, the shipyard must have enough amount before burn for the specified number of mints.
      * - If the shipyard's amount before burn becomes zero, the shipyard's shipwright status is set to false and shipwright experience is reset to zero.
      * - If the shipyard is not active, it will be unstaked.
-     * 
+     *
      * Emits a `ShipyardData` event with the updated shipyard information.
      */
     function removeJobAmount(
@@ -355,9 +360,14 @@ contract ShipyardJobImplementation is
             if (shipyard.ownerOf(tokenIds[i]) != _DeleguateMsgSender())
                 revert LibErrors.YouAreNotOwnerOfShipYard();
             if (!isActive(tokenIds[i])) revert LibErrors.ShipyardIsNotActive();
-            shipyard.safeTransferFrom(_DeleguateMsgSender(), address(this), tokenIds[i]);
+            shipyard.safeTransferFrom(
+                _DeleguateMsgSender(),
+                address(this),
+                tokenIds[i]
+            );
             shipyardInfos[tokenIds[i]].isStaked = true;
             shipyardInfos[tokenIds[i]].owner = _DeleguateMsgSender();
+            emit Stake(shipyardInfos[tokenIds[i]]);
         }
     }
 
@@ -374,6 +384,7 @@ contract ShipyardJobImplementation is
             );
             shipyardInfos[tokenIds[i]].isStaked = false;
             shipyardInfos[tokenIds[i]].owner = address(0);
+            emit Unstake(shipyardInfos[tokenIds[i]]);
         }
     }
 
@@ -389,6 +400,7 @@ contract ShipyardJobImplementation is
         );
         shipyardInfos[tokenId].isStaked = false;
         shipyardInfos[tokenId].owner = address(0);
+        emit Unstake(shipyardInfos[tokenId]);
     }
 
     /**
@@ -521,7 +533,10 @@ contract ShipyardJobImplementation is
      * @param forgeId The ID of the forge.
      * @param privateAddress The address to be removed.
      */
-    function _removeAddressPrivate(uint256 forgeId, address privateAddress) internal {
+    function _removeAddressPrivate(
+        uint256 forgeId,
+        address privateAddress
+    ) internal {
         isAddressAllowed[forgeId][privateAddress] = false;
         uint input;
         for (uint i; i < shipyardInfos[forgeId].privateFor.length; i++) {
@@ -644,14 +659,11 @@ contract ShipyardJobImplementation is
     ) internal view returns (uint256 result) {
         if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.COMMON) {
             return shipyardInfos[shipyardId].premiumCommon;
-        }
-        else if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.RARE) {
+        } else if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.RARE) {
             return shipyardInfos[shipyardId].premiumRare;
-        }
-        else if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.LEGENDARY) {
+        } else if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.LEGENDARY) {
             return shipyardInfos[shipyardId].premiumLeg;
-        }
-        else if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.SHIPMINT) {
+        } else if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.SHIPMINT) {
             return shipyardInfos[shipyardId].premiumShip;
         }
     }
@@ -683,13 +695,28 @@ contract ShipyardJobImplementation is
             return 0;
         } else {
             if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.COMMON) {
-                return uint32(MathHelper.sqrt(shipyardInfos[shipyardId].shipwrigthExp) * 10);
+                return
+                    uint32(
+                        MathHelper.sqrt(
+                            shipyardInfos[shipyardId].shipwrigthExp
+                        ) * 10
+                    );
             }
             if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.RARE) {
-                return uint32(MathHelper.sqrt(shipyardInfos[shipyardId].shipwrigthExp) * 10) * 3;
+                return
+                    uint32(
+                        MathHelper.sqrt(
+                            shipyardInfos[shipyardId].shipwrigthExp
+                        ) * 10
+                    ) * 3;
             }
             if (rarity == LibTheTreasureSea.TheTreasureSeaRarity.LEGENDARY) {
-                return uint32(MathHelper.sqrt(shipyardInfos[shipyardId].shipwrigthExp) * 10) * 5;
+                return
+                    uint32(
+                        MathHelper.sqrt(
+                            shipyardInfos[shipyardId].shipwrigthExp
+                        ) * 10
+                    ) * 5;
             }
         }
     }
@@ -730,7 +757,9 @@ contract ShipyardJobImplementation is
      * @param shipyardIds An array of shipyard IDs.
      * @return shipyardsInfos An array of shipyard information.
      */
-    function getShipyardInfosArray(uint256[] memory shipyardIds)
+    function getShipyardInfosArray(
+        uint256[] memory shipyardIds
+    )
         external
         view
         returns (LibShipyard.ShipyardInfos[] memory shipyardsInfos)

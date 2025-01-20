@@ -43,7 +43,6 @@ import {IRecruiterCollection} from "../recruiter/IRecruiterCollection.sol";
 import {ITheTreasureSea} from "../thesea/ITheTreasureSea.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {LibErrors} from "../libraries/LibErrors.sol";
-import {LibTheTreasureSea} from "../libraries/LibTheTreasureSea.sol";
 import {RandomNumberGenerator} from "../rng/RandomNumberGenerator.sol";
 
 contract Minter is AccessControl, ReentrancyGuard, RandomNumberGenerator {
@@ -157,30 +156,19 @@ contract Minter is AccessControl, ReentrancyGuard, RandomNumberGenerator {
      * @notice The claimed NFTs will be minted and transferred to the caller's address.
      */
     function claimMint(uint256 id) external {
-        // if (claimIsActive == false) revert LibErrors.NotAllowed();
-        IERC721flagOZ(idToNftCollection[id]).batchMint(
-            _msgSender(),
-            1
-        );
-    }
-
-    function claimTicket() external {
-        ITheTreasureSea nft = ITheTreasureSea(idToNftCollection[idCompass]);
-        nft.mint(
-            _msgSender(),
-            3,
-            uint256(LibTheTreasureSea.TheTreasureSeaEnum.PIRATE)
-        );
-        nft.mint(
-            _msgSender(),
-            3,
-            uint256(LibTheTreasureSea.TheTreasureSeaEnum.CORSAIR)
-        );
-        nft.mint(
-            _msgSender(),
-            3,
-            uint256(LibTheTreasureSea.TheTreasureSeaEnum.SMUGGLER)
-        );
+        if (claimIsActive == false) revert LibErrors.NotAllowed();
+        if (
+            userToBuildToAmountToClaim[_msgSender()][id] > 0 &&
+            userToBuildToAmountToClaim[_msgSender()][id] +
+                IERC721flagOZ(idToNftCollection[id]).totalSupply() <=
+            idToMaxSupply[id]
+        ) {
+            IERC721flagOZ(idToNftCollection[id]).batchMint(
+                _msgSender(),
+                userToBuildToAmountToClaim[_msgSender()][id]
+            );
+            userToBuildToAmountToClaim[_msgSender()][id] = 0;
+        }
     }
 
     /////////////
@@ -249,83 +237,83 @@ contract Minter is AccessControl, ReentrancyGuard, RandomNumberGenerator {
             // Mint tokens for a specific NFT collection
             ITheTreasureSea nft = ITheTreasureSea(idToNftCollection[id]);
 
-            // uint256 supply = idToCurrentSupply[id];
+            uint256 supply = idToCurrentSupply[id];
 
-            // require(saleIsActive[id], "Sale not active!");
+            require(saleIsActive[id], "Sale not active!");
 
-            // require(numberOfTokens <= 100, "Only 100 tokens at once");
+            require(numberOfTokens <= 100, "Only 100 tokens at once");
 
-            // if (supply + numberOfTokens > idToMaxSupply[id])
-            //     revert LibErrors.MaxReach();
+            if (supply + numberOfTokens > idToMaxSupply[id])
+                revert LibErrors.MaxReach();
 
             // Mint tokens for the sender
             nft.mint(_msgSender(), numberOfTokens, 6);
             idToCurrentSupply[id] += numberOfTokens;
         } else {
-            // uint256 supply = idToCurrentSupply[id];
+            uint256 supply = idToCurrentSupply[id];
 
-            // if (!isPublic) {
-            //     require(
-            //         numberOfTokens <= whitelist[_msgSender()],
-            //         "too low whitelisted spot!"
-            //     );
-            //     whitelist[_msgSender()] -= numberOfTokens;
-            // }
+            if (!isPublic) {
+                require(
+                    numberOfTokens <= whitelist[_msgSender()],
+                    "too low whitelisted spot!"
+                );
+                whitelist[_msgSender()] -= numberOfTokens;
+            }
 
-            // require(saleIsActive[id], "Sale not active!");
+            require(saleIsActive[id], "Sale not active!");
 
-            // require(numberOfTokens <= maxMintPerTx, "Only 10 tokens at once");
+            require(numberOfTokens <= maxMintPerTx, "Only 10 tokens at once");
 
-            // if (supply + numberOfTokens > idToMaxSupply[id])
-            //     revert LibErrors.MaxReach();
+            if (supply + numberOfTokens > idToMaxSupply[id])
+                revert LibErrors.MaxReach();
 
             // Update user's claimable tokens for the sale
             userToBuildToAmountToClaim[_msgSender()][id] += numberOfTokens;
-            // idToCurrentSupply[id] += numberOfTokens;
+            idToCurrentSupply[id] += numberOfTokens;
 
-            // // Edit user's whitelist
-            // recruiter.editUserWhitelist(_msgSender(), numberOfTokens);
-            // // airdop nft compass
-            // ITheTreasureSea(idToNftCollection[idCompass]).mint(
-            //     _msgSender(),
-            //     numberOfTokens,
-            //     6
-            // );
+            // Edit user's whitelist
+            recruiter.editUserWhitelist(_msgSender(), numberOfTokens);
+            // airdop nft compass
+            ITheTreasureSea(idToNftCollection[idCompass]).mint(
+                _msgSender(),
+                numberOfTokens,
+                6
+            );
         }
 
         // Transfer fees tokens from the sender to the treasury guild and referrer
-        // if (ref[_msgSender()] == address(0)) {
-        //     require(
-        //         feesTokenAddress.transferFrom(
-        //             _msgSender(),
-        //             treasuryGuild,
-        //             (numberOfTokens * idToPrice[id])
-        //         ),
-        //         "Transfer failed"
-        //     );
-        // } else {
-        //     uint256 refAmount = (numberOfTokens * idToPrice[id] * 15) / 100;
-        //     uint256 treasuryAmount = (numberOfTokens * idToPrice[id]) -
-        //         refAmount;
-        //     // Give 85% to the treasury guild
-        //     require(
-        //         feesTokenAddress.transferFrom(
-        //             _msgSender(),
-        //             treasuryGuild,
-        //             treasuryAmount
-        //         ),
-        //         "Transfer failed"
-        //     );
-        //     // Give 15% to the referrer
-        //     require(
-        //         feesTokenAddress.transferFrom(
-        //             _msgSender(),
-        //             ref[_msgSender()],
-        //             refAmount
-        //         ),
-        //         "Transfer failed"
-        //     );
-        // }
+        if (ref[_msgSender()] == address(0)) {
+            require(
+                feesTokenAddress.transferFrom(
+                    _msgSender(),
+                    treasuryGuild,
+                    (numberOfTokens * idToPrice[id])
+                ),
+                "Transfer failed"
+            );
+        } else {
+            uint256 refAmount = (numberOfTokens * idToPrice[id] * 15) / 100;
+            uint256 treasuryAmount = (numberOfTokens * idToPrice[id]) -
+                refAmount;
+            // Give 85% to the treasury guild
+            require(
+                feesTokenAddress.transferFrom(
+                    _msgSender(),
+                    treasuryGuild,
+                    treasuryAmount
+                ),
+                "Transfer failed"
+            );
+            // Give 15% to the referrer
+            require(
+                feesTokenAddress.transferFrom(
+                    _msgSender(),
+                    ref[_msgSender()],
+                    refAmount
+                ),
+                "Transfer failed"
+            );
+        }
 
         emit Sale(numberOfTokens, id, _msgSender());
     }
@@ -486,9 +474,9 @@ contract Minter is AccessControl, ReentrancyGuard, RandomNumberGenerator {
     function getLotteryData()
         external
         view
-        returns (uint256 _id, uint256 _lotteryPrice)
+        returns (uint256 _id, uint256 _lotteryPrice, Lottery status)
     {
-        return (currentLotteryId, lotteryPrice);
+        return (currentLotteryId, lotteryPrice, statusLottery);
     }
 
     ///////////
