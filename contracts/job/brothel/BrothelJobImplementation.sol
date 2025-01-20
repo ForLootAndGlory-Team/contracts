@@ -92,9 +92,9 @@ contract BrothelJobImplementation is
     event NewPremium(uint256 indexed id, uint256[] premium);
     event NewBaseFee(uint256 common, uint256 rare, uint256 leg);
     event NewLoad(uint256 indexed brothelId, uint256 amount);
-    event Update(LibBrothel.BrothelInfos brothel);
-    event Stake(LibBrothel.BrothelInfos brothel);
-    event Unstake(LibBrothel.BrothelInfos brothel);
+    event Update(uint256 indexed brothelId, LibBrothel.BrothelInfos brothel);
+    event Stake(uint256 indexed brothelId, LibBrothel.BrothelInfos brothel);
+    event Unstake(uint256 indexed brothelId, LibBrothel.BrothelInfos brothel);
 
     function initialize(LibBrothel.Init memory _init) public initializer {
         __AccessControl_init();
@@ -180,7 +180,7 @@ contract BrothelJobImplementation is
             _launch(characterIds[i], brothelId, rarity, randomWords[i]);
         }
 
-        emit Update(brothelInfos[brothelId]);
+        emit Update(brothelId, brothelInfos[brothelId]);
     }
 
     /**
@@ -331,7 +331,7 @@ contract BrothelJobImplementation is
             );
             brothelInfos[tokenIds[i]].isStaked = true;
             brothelInfos[tokenIds[i]].owner = _DeleguateMsgSender();
-            emit Stake(brothelInfos[tokenIds[i]]);
+            emit Stake(tokenIds[i], brothelInfos[tokenIds[i]]);
         }
     }
 
@@ -348,7 +348,7 @@ contract BrothelJobImplementation is
             );
             brothelInfos[tokenIds[i]].isStaked = false;
             brothelInfos[tokenIds[i]].owner = address(0);
-            emit Unstake(brothelInfos[tokenIds[i]]);
+            emit Unstake(tokenIds[i], brothelInfos[tokenIds[i]]);
         }
     }
 
@@ -364,7 +364,7 @@ contract BrothelJobImplementation is
         );
         brothelInfos[tokenId].isStaked = false;
         brothelInfos[tokenId].owner = address(0);
-        emit Unstake(brothelInfos[tokenId]);
+        emit Unstake(tokenId, brothelInfos[tokenId]);
     }
 
     /**

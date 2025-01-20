@@ -81,8 +81,8 @@ contract ForgeJobImplementation is
     event NewPremium(uint256 indexed id, uint256[] premium);
     event NewBaseFee(uint256 common, uint256 rare, uint256 leg);
     event NewLoad(uint256 indexed forgeId, uint256 amount);
-    event Stake(LibForge.ForgeInfos forge);
-    event Unstake(LibForge.ForgeInfos forge);
+    event Stake(uint256 indexed forgeId, LibForge.ForgeInfos forge);
+    event Unstake(uint256 indexed forgeId, LibForge.ForgeInfos forge);
 
     function initialize(
         address _characters,
@@ -341,7 +341,7 @@ contract ForgeJobImplementation is
             );
             _forge.isStaked = true;
             _forge.owner = _DeleguateMsgSender();
-            emit Stake(_forge);
+            emit Stake(tokenIds[i], _forge);
         }
     }
 
@@ -355,7 +355,7 @@ contract ForgeJobImplementation is
             forge.safeTransferFrom(address(this), _forge.owner, tokenIds[i]);
             _forge.isStaked = false;
             _forge.owner = address(0);
-            emit Unstake(_forge);
+            emit Unstake(tokenIds[i], _forge);
         }
     }
 
@@ -368,7 +368,7 @@ contract ForgeJobImplementation is
         forge.safeTransferFrom(address(this), _forge.owner, tokenId);
         _forge.isStaked = false;
         _forge.owner = address(0);
-        emit Unstake(_forge);
+        emit Unstake(tokenId, _forge);
     }
 
     /**

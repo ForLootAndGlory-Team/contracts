@@ -77,11 +77,14 @@ contract ShipyardJobImplementation is
     event ShipyardData(LibShipyard.ShipyardInfos shipyard);
     event NewLoad(uint256 indexed shipyardId, uint256 amount);
     event NewShipwrigth(uint256 shipyardId);
-    event Private(uint256 indexed id);
-    event Public(uint256 indexed id);
-    event NewPremium(uint256 indexed id, uint256[] premium);
-    event Stake(LibShipyard.ShipyardInfos shipyard);
-    event Unstake(LibShipyard.ShipyardInfos shipyard);
+    event Private(uint256 indexed shipyardId);
+    event Public(uint256 indexed shipyardId);
+    event NewPremium(uint256 indexed shipyardId, uint256[] premium);
+    event Stake(uint256 indexed shipyardId, LibShipyard.ShipyardInfos shipyard);
+    event Unstake(
+        uint256 indexed shipyardId,
+        LibShipyard.ShipyardInfos shipyard
+    );
 
     function initialize(
         address _characters,
@@ -367,7 +370,7 @@ contract ShipyardJobImplementation is
             );
             shipyardInfos[tokenIds[i]].isStaked = true;
             shipyardInfos[tokenIds[i]].owner = _DeleguateMsgSender();
-            emit Stake(shipyardInfos[tokenIds[i]]);
+            emit Stake(tokenIds[i], shipyardInfos[tokenIds[i]]);
         }
     }
 
@@ -384,7 +387,7 @@ contract ShipyardJobImplementation is
             );
             shipyardInfos[tokenIds[i]].isStaked = false;
             shipyardInfos[tokenIds[i]].owner = address(0);
-            emit Unstake(shipyardInfos[tokenIds[i]]);
+            emit Unstake(tokenIds[i], shipyardInfos[tokenIds[i]]);
         }
     }
 
@@ -400,7 +403,7 @@ contract ShipyardJobImplementation is
         );
         shipyardInfos[tokenId].isStaked = false;
         shipyardInfos[tokenId].owner = address(0);
-        emit Unstake(shipyardInfos[tokenId]);
+        emit Unstake(tokenId, shipyardInfos[tokenId]);
     }
 
     /**
